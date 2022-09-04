@@ -76,7 +76,7 @@ app.post("/messages", async (req, res) => {
   const exists = await db.collection("participants").findOne({ name: from });
 
   if (!exists) {
-    res.status(404).send({ message: "Participant not found" });
+    res.status(422).send({ message: "Participant not found" });
     return;
   }
 
