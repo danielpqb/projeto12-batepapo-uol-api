@@ -1,0 +1,6 @@
+{
+    "files.exclude": {
+    "front-bate-papo-uol-main": true,
+    "node_modules": true
+  }
+}
