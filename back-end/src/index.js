@@ -16,14 +16,20 @@ mongoClient.connect().then(() => {
   db = mongoClient.db("bate_papo_uol");
 });
 
-const userSchema = joi.object({
+const usersSchema = joi.object({
   name: joi.string().required(),
 });
 
-app.post("/participants", async (req, res) => {
-  let { name } = req.body;
+const messagesSchema = joi.object({
+  to: joi.string().required(),
+  text: joi.string().required(),
+  type: joi.string().valid("message", "private_message").required(),
+});
 
-  if (userSchema.validate({ name }, { abortEarly: true }).error) {
+app.post("/participants", async (req, res) => {
+  const { name } = req.body;
+
+  if (usersSchema.validate({ name }, { abortEarly: true }).error) {
     res.status(422).send({ message: "Invalid username" });
     return;
   }
@@ -61,6 +67,28 @@ app.get("/participants", async (req, res) => {
   } catch (error) {
     res.status(500).send(error);
   }
+});
+
+app.post("/messages", async (req, res) => {
+  const from = req.headers.user;
+  const { to, text, type } = req.body;
+
+  const exists = await db.collection("participants").findOne({ name: from });
+
+  if (!exists) {
+    res.status(404).send({ message: "Participant not found" });
+    return;
+  }
+
+  await db.collection("messages").insertOne({
+    from: from,
+    to: to,
+    text: text,
+    type: type,
+    time: dayjs(Date.now()).format("HH:mm:ss"),
+  });
+
+  res.status(201).send("OK");
 });
 
 app.listen(5000, () => console.log("Listening on port 5000!"));
