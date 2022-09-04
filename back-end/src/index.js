@@ -35,19 +35,29 @@ app.post("/participants", async (req, res) => {
       return;
     }
 
+    const dateNow = Date.now();
+
     await db
       .collection("participants")
-      .insertOne({ name: name, lastStatus: Date.now() });
+      .insertOne({ name: name, lastStatus: dateNow });
 
     await db.collection("messages").insertOne({
       from: name,
       to: "Todos",
       text: "entra na sala...",
       type: "status",
-      time: dayjs(now).format("HH:mm:ss"),
+      time: dayjs(dateNow).format("HH:mm:ss"),
     });
 
     res.status(201).send("OK");
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+app.get("/participants", async (req, res) => {
+  try {
+    res.status(200).send(await db.collection("participants").find().toArray());
   } catch (error) {
     res.status(500).send(error);
   }
