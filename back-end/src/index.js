@@ -122,4 +122,23 @@ app.get("/messages", async (req, res) => {
   }
 });
 
+app.post("/status", async (req, res) => {
+  const user = req.headers.user;
+
+  try {
+    const exists = await db.collection("participants").findOne({ name: user });
+    if (!exists) {
+      res.send(404);
+      return;
+    }
+
+    await db
+      .collection("participants")
+      .updateOne({ name: user }, { $set: { lastStatus: Date.now() } });
+    res.send(200);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
 app.listen(5000, () => console.log("Listening on port 5000!"));
