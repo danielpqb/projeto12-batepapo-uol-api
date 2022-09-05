@@ -73,6 +73,13 @@ app.post("/messages", async (req, res) => {
   const from = req.headers.user;
   const { to, text, type } = req.body;
 
+  if (
+    messagesSchema.validate({ to, text, type }, { abortEarly: false }).error
+  ) {
+    res.status(422).send({ message: "Invalid message" });
+    return;
+  }
+
   const exists = await db.collection("participants").findOne({ name: from });
 
   if (!exists) {
@@ -89,6 +96,30 @@ app.post("/messages", async (req, res) => {
   });
 
   res.status(201).send("OK");
+});
+
+app.get("/messages", async (req, res) => {
+  const limit = parseInt(req.query.limit);
+  const user = req.headers.user;
+
+  try {
+    const messages = await db.collection("messages").find().toArray();
+    const lastMessages = messages.filter((message) => {
+      return (
+        message.type === "message" ||
+        message.type === "status" ||
+        message.to === user ||
+        message.from === user
+      );
+    });
+    if (limit > 0) {
+      res.send(lastMessages.slice(-limit));
+      return;
+    }
+    res.send(lastMessages);
+  } catch (error) {
+    res.status(500).send(error);
+  }
 });
 
 app.listen(5000, () => console.log("Listening on port 5000!"));
