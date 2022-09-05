@@ -142,13 +142,15 @@ app.post("/status", async (req, res) => {
 });
 
 //Inactive users
-setInterval(() => {
-  const inactiveUsers = async () => {
-    const users = await db.collection("participants").find().toArray();
-    return users.filter((user) => {
-      return Date.now() - user.lastStatus > 10000;
-    });
-  };
+const getInactiveUsers = async () => {
+  const users = await db.collection("participants").find().toArray();
+  const afkUsers = users.filter((user) => {
+    return Date.now() - user.lastStatus > 10000;
+  });
+  return afkUsers;
+};
+setInterval(async () => {
+  const inactiveUsers = await getInactiveUsers();
 
   inactiveUsers.forEach(async (user) => {
     await db.collection("participants").deleteOne({ _id: user._id });
