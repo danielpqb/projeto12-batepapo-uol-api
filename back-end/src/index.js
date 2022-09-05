@@ -128,17 +128,38 @@ app.post("/status", async (req, res) => {
   try {
     const exists = await db.collection("participants").findOne({ name: user });
     if (!exists) {
-      res.send(404);
+      res.sendStatus(404);
       return;
     }
 
     await db
       .collection("participants")
       .updateOne({ name: user }, { $set: { lastStatus: Date.now() } });
-    res.send(200);
+    res.sendStatus(200);
   } catch (error) {
     res.status(500).send(error);
   }
 });
+
+//Inactive users
+setInterval(() => {
+  const inactiveUsers = async () => {
+    const users = await db.collection("participants").find().toArray();
+    return users.filter((user) => {
+      return Date.now() - user.lastStatus > 10000;
+    });
+  };
+
+  inactiveUsers.forEach(async (user) => {
+    await db.collection("participants").deleteOne({ _id: user._id });
+    await db.collection("messages").insertOne({
+      from: user.name,
+      to: "Todos",
+      text: "sai da sala...",
+      type: "status",
+      time: dayjs(Date.now()).format("HH:mm:ss"),
+    });
+  });
+}, 15000);
 
 app.listen(5000, () => console.log("Listening on port 5000!"));
